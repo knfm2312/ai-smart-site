@@ -1,9 +1,8 @@
 import os
 import re
+import gc  # Added for memory management
 from datetime import datetime
 from functools import wraps
-
-#os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = '1'
 
 # Flask and Security
 from flask import Flask, render_template, request, jsonify, redirect, url_for, flash, session
@@ -23,6 +22,10 @@ load_dotenv()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = os.getenv("SECRET_KEY", "pro-dev-2026")
+
+# --- MEMORY SAFETY CONFIGURATION ---
+# Prevent OOM (Out of Memory) by limiting PDF size to 5MB
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024 
 
 # --- DATABASE & CLIENT CONFIGURATION ---
 client = MongoClient(os.getenv("MONGO_URI"))
@@ -117,17 +120,14 @@ def signup():
         return redirect(url_for('login'))
     return render_template('signup.html')
 
-# --- CORRECTED GOOGLE ROUTES ---
 @app.route('/login/google')
 def google_login():
-    # This automatically detects if it's on localhost or your live website
     redirect_uri = url_for('google_callback', _external=True)
     return google.authorize_redirect(redirect_uri)
 
 @app.route('/login/google/callback')
 def google_callback():
     token = google.authorize_access_token()
-    # Updated userinfo fetching to be more reliable
     user_info = token.get('userinfo')
     
     user_data = users_col.find_one({"email": user_info['email']})
@@ -149,7 +149,7 @@ def google_callback():
 @app.route('/logout')
 def logout():
     logout_user()
-    session.clear() # Clear everything
+    session.clear()
     return redirect(url_for('login'))
 
 # --- CORE CHAT LOGIC ---
@@ -166,7 +166,6 @@ def chat():
         user_query = request.json.get('message')
         if not user_query: return jsonify({"response": "Empty message."})
 
-        # Fetch context
         prev_chats = list(chat_col.find({"user_id": current_user.id}).sort("timestamp", -1).limit(3))
         chat_context = "\n".join([f"{c['role']}: {c['content']}" for c in reversed(prev_chats)])
 
@@ -184,8 +183,10 @@ def chat():
         }]
         search_results = list(kb_col.aggregate(pipeline))
         kb_context = " ".join([r.get('text', '') for r in search_results])
+        
+        # Updated to gemini-2.0-flash (stable)
         response = ai_client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=f"Context: {kb_context}\n\nHistory: {chat_context}\n\nUser: {user_query}"
         )
 
@@ -227,19 +228,30 @@ def admin_page():
 def upload():
     file = request.files.get('file')
     if file and file.filename.endswith('.pdf'):
-        filename = secure_filename(file.filename)
-        reader = PdfReader(file)
-        text = " ".join([p.extract_text() or "" for p in reader.pages])
-        
-        chunks = [text[i:i+1000] for i in range(0, len(text), 800)]
-        for chunk in chunks:
-            res = ai_client.models.embed_content(model="models/gemini-embedding-001", contents=chunk)
-            kb_col.insert_one({
-                "filename": filename, 
-                "text": chunk, 
-                "embedding": res.embeddings[0].values
-            })
-        return jsonify({"message": "Knowledge updated successfully."})
+        try:
+            filename = secure_filename(file.filename)
+            reader = PdfReader(file)
+            text = " ".join([p.extract_text() or "" for p in reader.pages])
+            
+            # Chunking and embedding
+            chunks = [text[i:i+1000] for i in range(0, len(text), 800)]
+            for chunk in chunks:
+                res = ai_client.models.embed_content(model="models/gemini-embedding-001", contents=chunk)
+                kb_col.insert_one({
+                    "filename": filename, 
+                    "text": chunk, 
+                    "embedding": res.embeddings[0].values
+                })
+            
+            # CRITICAL: Clean up memory after upload
+            del reader
+            gc.collect() 
+            
+            return jsonify({"message": "Knowledge updated successfully."})
+        except Exception as e:
+            print(f"Upload Error: {e}")
+            return jsonify({"message": "Processing error."}), 500
+            
     return jsonify({"message": "Upload failed."}), 400
 
 @app.route('/delete_file/<filename>', methods=['POST'])
