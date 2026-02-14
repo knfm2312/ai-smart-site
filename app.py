@@ -183,8 +183,6 @@ def chat():
         }]
         search_results = list(kb_col.aggregate(pipeline))
         kb_context = " ".join([r.get('text', '') for r in search_results])
-        
-        # Updated to gemini-2.0-flash (stable)
         response = ai_client.models.generate_content(
             model="gemini-2.5-flash",
             contents=f"Context: {kb_context}\n\nHistory: {chat_context}\n\nUser: {user_query}"
