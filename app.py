@@ -186,7 +186,7 @@ def chat():
         
         # Updated to gemini-2.0-flash (stable)
         response = ai_client.models.generate_content(
-            model="gemini-2.0-flash",
+            model="gemini-2.5-flash",
             contents=f"Context: {kb_context}\n\nHistory: {chat_context}\n\nUser: {user_query}"
         )
 
