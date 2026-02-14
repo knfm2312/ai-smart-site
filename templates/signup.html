@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up - AI Site</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%); 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            margin: 0; 
+        }
+        .card { 
+            background: white; 
+            padding: 2.5rem; 
+            border-radius: 15px; 
+            width: 380px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2); 
+            text-align: center; 
+        }
+        h2 { color: #333; margin-bottom: 1.5rem; font-weight: 700; }
+        input { 
+            width: 100%; 
+            padding: 12px; 
+            margin: 10px 0; 
+            border: 1px solid #ddd; 
+            border-radius: 8px; 
+            box-sizing: border-box; 
+            font-size: 0.95rem;
+        }
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.3);
+        }
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background: #667eea; 
+            color: white; 
+            border: none; 
+            border-radius: 8px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            transition: background 0.3s; 
+            margin-top: 10px;
+        }
+        button:hover { background: #4a5dc5; }
+        .flash { 
+            color: #d9534f; 
+            background: #f9d6d5; 
+            padding: 10px; 
+            border-radius: 5px; 
+            margin-bottom: 15px; 
+            font-size: 0.85rem; 
+            border: 1px solid #ebccd1;
+        }
+        .hint {
+            font-size: 0.75rem;
+            color: #777;
+            text-align: left;
+            margin: -5px 0 10px 2px;
+        }
+        p { margin-top: 20px; color: #666; font-size: 0.9rem; }
+        a { color: #667eea; text-decoration: none; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2>Join Us</h2>
+
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+            {% for message in messages %}
+              <div class="flash">{{ message }}</div>
+            {% endfor %}
+          {% endif %}
+        {% endwith %}
+
+        <form action="/signup" method="POST">
+            <input type="text" name="username" placeholder="Username" required>
+            <input type="email" name="email" placeholder="Email Address" required>
+            
+            <input type="password" name="password" 
+                   placeholder="Create Password" 
+                   required>
+            <div class="hint">Min. 8 characters, include a number or symbol.</div>
+            
+            <input type="password" name="confirm_password" placeholder="Confirm Password" required>
+            
+            <button type="submit">Register</button>
+        </form>
+        
+        <p>Already a member? <a href="/login">Login</a></p>
+    </div>
+</body>
+</html>

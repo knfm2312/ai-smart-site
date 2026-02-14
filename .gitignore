@@ -1,0 +1,21 @@
+# --- DATABASE & API SECRETS ---
+.env
+
+# --- PYTHON SETTINGS ---
+venv/
+.venv/
+env/
+__pycache__/
+*.py[cod]
+*$py.class
+
+# --- LOCAL DATA ---
+data/pdfs/*.pdf
+
+# --- SYSTEM FILES ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- VS CODE SETTINGS ---
+.vscode/

@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Smart Site</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <style>
+        #chat-widget {
+            display: none;
+            position: fixed;
+            bottom: 90px;
+            right: 20px;
+            width: 350px;
+            height: 500px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            z-index: 1000;
+            flex-direction: column;
+        }
+        #chat-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: #007bff;
+            color: white;
+            border-radius: 50%;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            z-index: 1001;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+        }
+    </style>
+
+    <script>
+        function toggleChat() {
+            const widget = document.getElementById('chat-widget');
+            const bubble = document.getElementById('chat-toggle');
+            
+            if (!widget || !bubble) return;
+
+            // Check display state
+            if (widget.style.display === 'none' || widget.style.display === '') {
+                widget.style.display = 'flex';
+                bubble.style.display = 'none';
+                
+                // Trigger history load from chat.js if available
+                if (typeof loadChatHistory === 'function') {
+                    loadChatHistory();
+                }
+                
+                // Focus input
+                const input = document.getElementById('user-input');
+                if (input) input.focus();
+            } else {
+                widget.style.display = 'none';
+                bubble.style.display = 'flex';
+            }
+        }
+    </script>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">AI-Bot-Site</div>
+            <ul>
+                <li><a href="/">Home</a></li>
+                {% if user.is_admin %}
+                <li><a href="{{ url_for('admin_page') }}">Admin Portal</a></li>
+                {% endif %}
+                <li><a href="/logout">Logout</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="hero">
+        <div class="hero-content">
+            <h1>Hello, {{ user.username }}! 
+                {% if user.is_admin %}<span class="admin-badge">Admin</span>{% endif %}
+            </h1>
+            <p>Discover the power of your data. Ask our AI assistant anything.</p>
+            <div class="hero-btns">
+                <button class="cta-btn" onclick="toggleChat()">Get Started</button>
+            </div>
+        </div>
+    </main>
+
+    <div id="chat-widget">
+        <div id="chat-header" style="padding: 15px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center;">
+            <strong style="color: #333;">AI Assistant</strong>
+            <div style="display: flex; gap: 10px;">
+                <button id="clear-btn" title="Clear Chat" style="background: none; border: none; cursor: pointer;">🗑️</button>
+                <button onclick="toggleChat()" style="background: none; border: none; cursor: pointer; font-size: 20px;">—</button>
+            </div>
+        </div>
+        
+        <div id="chat-body" style="flex: 1; overflow-y: auto; padding: 15px;"></div>
+        
+        <div id="chat-input-area" style="padding: 15px; border-top: 1px solid #eee; display: flex; gap: 10px;">
+            <input type="text" id="user-input" placeholder="Type a message..." style="flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+            <button id="send-btn" style="padding: 10px 15px; background: #007bff; color: white; border: none; border-radius: 5px; cursor: pointer;">➤</button>
+        </div>
+    </div>
+
+    <button id="chat-toggle" onclick="toggleChat()">💬</button>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="{{ url_for('static', filename='js/chat.js') }}"></script>
+
+    <script>
+        // Failsafe to ensure events are bound if chat.js doesn't do it
+        document.addEventListener('DOMContentLoaded', () => {
+            const sendBtn = document.getElementById('send-btn');
+            const userInput = document.getElementById('user-input');
+
+            // Send on click
+            if (sendBtn && typeof sendMessage === 'function') {
+                sendBtn.onclick = sendMessage;
+            }
+
+            // Send on Enter key
+            if (userInput && typeof sendMessage === 'function') {
+                userInput.onkeypress = (e) => {
+                    if (e.key === 'Enter') sendMessage();
+                };
+            }
+        });
+    </script>
+</body>
+</html>

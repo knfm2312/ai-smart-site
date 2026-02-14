@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI-Bot Admin</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+        body { background-color: #f8f9fa; }
+        .admin-header { background: white; padding: 20px 50px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .admin-header h1 { color: #007bff; margin: 0; font-size: 24px; }
+        .back-link { text-decoration: none; color: #333; font-size: 14px; display: block; margin-top: 5px; }
+        
+        .container { max-width: 1000px; margin: 40px auto; background: white; padding: 40px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
+        h2 { font-size: 28px; margin-bottom: 10px; }
+        .subtitle { color: #666; margin-bottom: 30px; }
+
+        .upload-card {
+            border: 2px dashed #007bff;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .upload-card h3 { margin-bottom: 20px; }
+        .file-input-wrapper { margin-bottom: 20px; }
+        
+        .btn-upload {
+            background: #0056b3;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            font-size: 18px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,86,179,0.3);
+        }
+
+        .stored-section { margin-top: 50px; }
+        .doc-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .doc-table th { text-align: left; padding: 15px; border-bottom: 2px solid #eee; color: #333; }
+        .doc-table td { padding: 15px; border-bottom: 1px solid #eee; }
+        
+        .btn-remove {
+            background: #ff5c5c;
+            color: white;
+            border: none;
+            padding: 6px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <header class="admin-header">
+        <h1>AI-Bot Admin</h1>
+        <a href="/" class="back-link">Back to Site</a>
+    </header>
+
+    <div class="container">
+        <h2>Knowledge Base Management</h2>
+        <p class="subtitle">Teach your AI new things or remove outdated information.</p>
+
+        <div class="upload-card">
+            <h3>Upload New PDF</h3>
+            <form id="upload-form">
+                <div class="file-input-wrapper">
+                    <input type="file" id="file-input" accept=".pdf" required>
+                </div>
+                <button type="submit" class="btn-upload">Upload & Train AI</button>
+            </form>
+            <p id="status" style="margin-top: 15px; font-weight: bold;"></p>
+        </div>
+
+        <div class="stored-section">
+            <h3>Stored Documents</h3>
+            <table class="doc-table">
+                <thead>
+                    <tr>
+                        <th>Filename</th>
+                        <th style="text-align: right;">Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for file in files %}
+                    <tr>
+                        <td>{{ file }}</td>
+                        <td style="text-align: right;">
+                            <button class="btn-remove" onclick="deleteFile('{{ file }}')">Remove</button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Upload logic
+        document.getElementById('upload-form').onsubmit = async (e) => {
+            e.preventDefault();
+            const fileInput = document.getElementById('file-input');
+            const status = document.getElementById('status');
+            
+            if (!fileInput.files[0]) return;
+
+            const formData = new FormData();
+            formData.append('file', fileInput.files[0]);
+
+            status.innerText = "Processing and Embedding... Please wait.";
+            status.style.color = "#007bff";
+
+            try {
+                const res = await fetch('/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                status.innerText = data.message;
+                status.style.color = "green";
+                setTimeout(() => location.reload(), 1500);
+            } catch (err) {
+                status.innerText = "Error uploading file.";
+                status.style.color = "red";
+            }
+        };
+
+        // Delete logic
+        async function deleteFile(filename) {
+            if (confirm(`Are you sure you want to remove ${filename}?`)) {
+                const res = await fetch(`/delete_file/${encodeURIComponent(filename)}`, { 
+                    method: 'POST' 
+                });
+                const data = await res.json();
+                alert(data.message);
+                location.reload();
+            }
+        }
+    </script>
+</body>
+</html>
